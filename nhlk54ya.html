@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚀 萬能 Markdown 編輯轉換器</title>
+
+  <!-- Open Graph & Social Preview (LINE, Telegram, Facebook, X, etc.) -->
+  <meta property="og:title" content="🚀 萬能 Markdown 編輯轉換器">
+  <meta property="og:description" content="章節摘要：✨ 核心特色功能 · 📊 範例展示">
+  <meta property="og:type" content="article">
+  <meta name="description" content="章節摘要：✨ 核心特色功能 · 📊 範例展示">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="🚀 萬能 Markdown 編輯轉換器">
+  <meta name="twitter:description" content="章節摘要：✨ 核心特色功能 · 📊 範例展示">
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Highlight.js for code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
+  <style>
+    :root {
+      --bg-body: #f8fafc;
+      --bg-panel: #ffffff;
+      --bg-card: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
+      --accent-light: rgba(99, 102, 241, 0.08);
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+      --font-heading: 'Outfit', 'Noto Sans TC', sans-serif;
+      --font-body: 'Inter', 'Noto Sans TC', system-ui, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --toc-hover: rgba(99, 102, 241, 0.04);
+      --font-size-base: 16px;
+    }
+
+    [data-theme="dark"] {
+      --bg-body: #090d16;
+      --bg-panel: #0f172a;
+      --bg-card: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #818cf8;
+      --accent-gradient: linear-gradient(135deg, #818cf8, #6366f1);
+      --accent-light: rgba(129, 140, 248, 0.12);
+      --border: #1e293b;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+      --toc-hover: rgba(129, 140, 248, 0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: var(--font-size-base);
+      line-height: 1.8;
+      transition: background-color 0.3s, color 0.3s;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      display: flex;
+      max-width: 1440px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .sidebar {
+      width: 300px;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      transition: transform 0.3s, background-color 0.3s, border-color 0.3s;
+      transform: translateX(-300px);
+    }
+
+    body.sidebar-expanded .sidebar { transform: translateX(0); }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-title {
+      font-family: var(--font-heading);
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toc-scroll {
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 0.25rem;
+    }
+    .toc-scroll::-webkit-scrollbar { width: 4px; }
+    .toc-scroll::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 4px; }
+
+    .toc-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.6rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+      margin-bottom: 0.125rem;
+      line-height: 1.4;
+    }
+    .toc-link:hover {
+      background-color: var(--toc-hover);
+      color: var(--accent);
+    }
+    .toc-link.active {
+      background-color: var(--accent-light);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .toc-link.l2 { padding-left: 1.5rem; font-size: 0.775rem; }
+    .toc-link.l3 { padding-left: 2.25rem; font-size: 0.725rem; }
+
+    .toc-bullet {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: currentColor;
+      opacity: 0.4;
+      flex-shrink: 0;
+    }
+    .toc-link.active .toc-bullet { opacity: 1; transform: scale(1.4); }
+
+    .toc-empty {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      padding: 1rem 0;
+      text-align: center;
+    }
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      margin-left: 0;
+      transition: margin-left 0.3s;
+    }
+    body.sidebar-expanded .main-content { margin-left: 300px; }
+
+    .header-bar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background-color: var(--bg-body);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-icon {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+    .toggle-sidebar-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      z-index: 20;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    .toggle-sidebar-btn:hover { transform: scale(1.05); }
+
+    .article-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 6rem;
+    }
+
+    /* Content Typography & Layout */
+    .article-content { line-height: 1.8; word-break: break-word; }
+    .article-content h1, .article-content h2, .article-content h3,
+    .article-content h4, .article-content h5, .article-content h6 {
+      font-family: var(--font-heading);
+      color: var(--text-main);
+      font-weight: 700;
+      margin-top: 2rem;
+      margin-bottom: 0.8rem;
+      line-height: 1.35;
+    }
+    .article-content h1 { font-size: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-top: 0; }
+    .article-content h2 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    .article-content h3 { font-size: 1.25rem; }
+    .article-content p { margin-bottom: 1.2rem; }
+    .article-content ul, .article-content ol { margin-bottom: 1.2rem; padding-left: 1.5rem; }
+    .article-content li { margin-bottom: 0.35rem; }
+    .article-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 0.6rem 1.2rem;
+      margin: 1.5rem 0;
+      background: var(--bg-card);
+      border-radius: 0 0.5rem 0.5rem 0;
+      color: var(--text-muted);
+    }
+    .article-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    .article-content th, .article-content td {
+      padding: 0.65rem 0.9rem;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .article-content th { background: var(--bg-card); font-weight: 600; }
+    .article-content pre {
+      position: relative;
+      margin: 1.5rem 0;
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    .article-content code {
+      font-family: var(--font-mono);
+      font-size: 0.875em;
+    }
+    .article-content p code, .article-content li code {
+      background: var(--bg-card);
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.3rem;
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+    .article-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0; }
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(15, 23, 42, 0.7);
+      color: #94a3b8;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.4rem;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { background: rgba(15, 23, 42, 0.9); color: #fff; }
+
+    /* Lock Screen Overlay (For Password-Protected Content) */
+    #lock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: var(--bg-body);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    body:not(.is-locked) #lock-screen {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .lock-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2.25rem 2rem;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      position: relative;
+    }
+
+    .lock-icon-wrap {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.25rem;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      box-shadow: 0 0 24px rgba(99, 102, 241, 0.2);
+    }
+
+    .lock-title {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .lock-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1.75rem;
+      line-height: 1.5;
+    }
+
+    .password-field-wrap {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 0.85rem 2.85rem 0.85rem 1.15rem;
+      border: 1.5px solid var(--border);
+      background: var(--bg-body);
+      color: var(--text-main);
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .password-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .toggle-pwd-vis {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .toggle-pwd-vis:hover { color: var(--text-main); }
+
+    .unlock-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .unlock-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+    .unlock-btn:active { transform: translateY(0); }
+    .unlock-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .error-msg {
+      margin-top: 0.85rem;
+      font-size: 0.825rem;
+      color: #ef4444;
+      font-weight: 600;
+      min-height: 1.25rem;
+      transition: opacity 0.2s;
+    }
+
+    .shake {
+      animation: shake-anim 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    @keyframes shake-anim {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(3px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+
+    /* Mobile view */
+    @media (max-width: 768px) {
+      body.sidebar-expanded .sidebar { transform: translateX(0); box-shadow: var(--shadow-lg); }
+      body.sidebar-expanded .main-content { margin-left: 0; }
+      .article-wrap { padding: 1.5rem 1rem 4rem; }
+      .article-content h1 { font-size: 1.6rem; }
+      .article-content h2 { font-size: 1.3rem; }
+      .sidebar { width: 280px; }
+      .lock-card { padding: 1.75rem 1.25rem; }
+    }
+  </style>
+</head>
+<body class="sidebar-expanded">
+
+  
+
+  <!-- Main Container -->
+  <div class="app-container" id="main-app-container">
+    <!-- Sidebar / TOC -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">📑 文件大綱</span>
+        <button class="btn-icon" id="close-sidebar-btn" title="關閉大綱">✕</button>
+      </div>
+      <div class="toc-scroll" id="toc-container">
+        <a class="toc-link l1" href="#h-0" data-id="h-0">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">
+            萬能 Markdown 編輯轉換器
+          </span>
+      </a>
+<a class="toc-link l1" href="#h-1" data-id="h-1">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🚀 萬能 Markdown 編輯轉換器</span>
+      </a>
+<a class="toc-link l1" href="#h-2" data-id="h-2">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">✨ 核心特色功能</span>
+      </a>
+<a class="toc-link l1" href="#h-3" data-id="h-3">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">📊 範例展示</span>
+      </a>
+<a class="toc-link l2" href="#h-4" data-id="h-4">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">1. 表格排版</span>
+      </a>
+<a class="toc-link l2" href="#h-5" data-id="h-5">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">2. 程式碼區塊</span>
+      </a>
+<a class="toc-link l2" href="#h-6" data-id="h-6">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">3. 任務清單與刪除線</span>
+      </a>
+<a class="toc-link l2" href="#h-7" data-id="h-7">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">4. Mermaid 流程圖</span>
+      </a>
+
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="header-bar">
+        <div class="header-controls">
+          <button class="btn-icon" id="open-sidebar-btn" title="展開大綱">📑 目錄</button>
+        </div>
+        <div class="header-controls">
+          <button class="btn-icon" id="font-dec-btn" title="縮小字體">A-</button>
+          <button class="btn-icon" id="font-inc-btn" title="放大字體">A+</button>
+          <button class="btn-icon" id="theme-toggle-btn" title="深淺色切換">🌙</button>
+        </div>
+      </header>
+
+      <div class="article-wrap">
+        <article class="article-content" id="article-content">
+          <div class="metadata-card-wrapper mb-8 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-sm shadow-sm flex flex-col gap-4" contenteditable="false">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="flex flex-col gap-1.5">
+          
+          <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 dark:text-slate-100 m-0 tracking-tight" style="border-bottom: none; margin-top: 0; padding-bottom: 0;" id="h-0">
+            萬能 Markdown 編輯轉換器
+          </h2>
+        </div>
+        <span class="text-xs font-medium text-slate-400 dark:text-slate-500 font-mono">2026-06-17</span>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400 m-0 leading-relaxed">一個極致美觀、高效的三向即時同步 Markdown 編輯器，支援 GFM、Mermaid、YAML Front Matter 等強大功能。</p>
+      <div class="flex flex-wrap gap-2 mt-1">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100/50 dark:border-indigo-900/30">
+      # Markdown
+    </span>
+   
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100/50 dark:border-indigo-900/30">
+      # WebApp
+    </span>
+   
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100/50 dark:border-indigo-900/30">
+      # Productivity
+    </span>
+   
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100/50 dark:border-indigo-900/30">
+      # Mermaid
+    </span>
+  </div>
+    </div>
+  <h1 id="h-1">🚀 萬能 Markdown 編輯轉換器</h1>
+<p>歡迎使用這個功能強大且設計精美的 <strong>Vite + React + Tailwind CSS</strong> 單頁應用程式 (PWA)！支援三向即時同步、多種格式匯出，並針對行動端與桌面端進行深度最佳化。</p>
+<h2 id="h-2">✨ 核心特色功能</h2>
+<ol>
+<li><p><strong>三向即時互轉同步</strong>：</p>
+<ul>
+<li>在 <strong>Markdown</strong>、<strong>HTML 原始碼</strong> 或 <strong>美化閱讀排版</strong> 任一區塊編輯，其餘兩者即時更新。</li><li><strong>雙擊閱讀排版</strong>即可進入 <code>contentEditable</code> 視覺編輯模式，修改內容同步回 Markdown 及 HTML。</li></ul>
+</li><li><p><strong>彈性版面配置</strong>：</p>
+<ul>
+<li>支援<strong>單欄</strong>或<strong>雙欄對照</strong>模式，可自訂左右欄位顯示（Markdown / HTML / 閱讀格式）。</li></ul>
+</li><li><p><strong>智慧圖片匯出與自由切片</strong>：</p>
+<ul>
+<li>整合 <code>html2canvas</code> + <code>JSZip</code>，支援整頁、均等裁切或固定高度裁切。</li><li>提供「極簡白」與「質感暗黑」兩種風格，一鍵打包下載 ZIP。</li></ul>
+</li><li><p><strong>PDF 匯出（圖片版 + 文字可複製版）</strong>：</p>
+<ul>
+<li><strong>圖片版 PDF</strong>：完美還原美化排版，一鍵下載或分享。</li><li><strong>文字版 PDF</strong>：動態載入霞鶩文楷字型，輸出 100% 可選取複製與全文搜尋的 PDF。</li></ul>
+</li><li><p><strong>美化 HTML 匯出（雙欄大綱排版）</strong>：</p>
+<ul>
+<li>匯出精緻排版的獨立 HTML 檔案，開啟免安裝、免網路。</li><li><strong>自適應雙欄版面</strong>：桌機預設左側大綱 + 右側文章；手機單欄，點選單展開大綱，點段落自動收合。</li><li><strong>字體調整（A+ / A-）</strong>：桌機右上角，手機於標頭列右側，範圍 12–24px，偏好自動儲存。</li><li><strong>深色 / 淺色主題切換</strong>：偏好自動儲存，桌機 / 手機版皆支援。</li><li><strong>Scrollspy 滾動偵測</strong>：滾動時左側大綱自動高亮目前閱讀位置。</li></ul>
+</li><li><p><strong>社群分享最佳化</strong>：</p>
+<ul>
+<li>行動端呼叫 Web Share API 直接傳送至 LINE 等 App。</li><li><strong>複製圖片至剪貼簿</strong>：桌機直接 Ctrl+V 貼至 LINE 對話框。</li></ul>
+</li><li><p><strong>PWA 漸進式網頁應用</strong>：可加入手機主畫面，離線時仍可使用。</p>
+</li><li><p><strong>歷史記錄管理（Undo / Redo）</strong>：400ms 防抖，支援無限次上一步與下一步。</p>
+</li><li><p><strong>GFM 擴充語法支援</strong>：</p>
+<ul>
+<li>完整支援 <strong>GitHub Flavored Markdown (GFM)</strong>，包括表格、任務清單與 <del>刪除線</del> 等語法。</li></ul>
+</li><li><p><strong>程式碼語法高亮</strong>：</p>
+<ul>
+<li>整合 <code>highlight.js</code>，自動為各類程式碼區塊提供高品質語法著色與一鍵複製按鈕。</li></ul>
+</li><li><p><strong>Mermaid 向量圖表視覺化與容錯支援</strong>：</p>
+<ul>
+<li>原生支援流程圖、時序圖等圖表語法，深淺主題自適應，並具備無引號裸寫自動容錯與向量匯出。</li></ul>
+</li><li><p><strong>YAML Front Matter 元資料卡片</strong>：</p>
+<ul>
+<li>文件開頭的 <code>---</code> 包裹區塊會渲染為結構化的精美 metadata 卡片（含標題、描述、日期、標籤與 Draft 草稿狀態）。</li></ul>
+</li><li><p><strong>✨ AI 複製排版智慧修復</strong>：</p>
+<ul>
+<li>針對從 AI 對話（如 ChatGPT / Claude / Antigravity）直接反白複製的內容，一鍵修復多餘換行、檔案標籤、Emoji 標題階層化、粗體項目與補齊 Mermaid 圍欄。</li></ul>
+</li></ol>
+<hr>
+<h2 id="h-3">📊 範例展示</h2>
+<h3 id="h-4">1. 表格排版</h3>
+<table>
+<thead>
+<tr>
+<th align="left">功能</th>
+<th align="center">支援狀態</th>
+<th align="left">說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">三向即時同步</td>
+<td align="center">✅</td>
+<td align="left">Markdown / HTML / 閱讀格式三者互轉</td>
+</tr>
+<tr>
+<td align="left">Mermaid 向量圖表</td>
+<td align="center">✅</td>
+<td align="left">流程圖、時序圖、心智圖即時渲染</td>
+</tr>
+<tr>
+<td align="left">AI 複製智慧修復</td>
+<td align="center">✅</td>
+<td align="left">一鍵修復多餘換行、Emoji 標題與語法</td>
+</tr>
+<tr>
+<td align="left">圖片裁切匯出</td>
+<td align="center">✅</td>
+<td align="left">Canvas 渲染 + JSZip 打包下載</td>
+</tr>
+<tr>
+<td align="left">文字可複製 PDF</td>
+<td align="center">✅</td>
+<td align="left">霞鶩文楷向量字型嵌入</td>
+</tr>
+<tr>
+<td align="left">美化 HTML 匯出</td>
+<td align="center">✅</td>
+<td align="left">雙欄大綱、A± 字體、主題切換</td>
+</tr>
+<tr>
+<td align="left">PWA 離線安裝</td>
+<td align="center">✅</td>
+<td align="left">Service Worker + Web Manifest</td>
+</tr>
+<tr>
+<td align="left">Mermaid 流程圖</td>
+<td align="center">✅</td>
+<td align="left">延遲載入，僅在需要時載入</td>
+</tr>
+<tr>
+<td align="left">YAML 元資料卡</td>
+<td align="center">✅</td>
+<td align="left">開頭 <code>---</code> 區塊美化渲染</td>
+</tr>
+</tbody></table>
+<h3 id="h-5">2. 程式碼區塊</h3>
+<div class="code-block-wrapper">
+  <button class="copy-code-btn" aria-label="Copy code" title="複製此程式碼">
+    <svg class="copy-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+    <svg class="check-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  </button>
+  <pre><code class="language-javascript hljs" data-highlighted="yes"><span class="hljs-comment">// 核心三向同步邏輯示意</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">syncFromMarkdown</span>(<span class="hljs-params">md</span>) {
+  <span class="hljs-keyword">const</span> html = <span class="hljs-title function_">parseMarkdownToHtml</span>(md);
+  <span class="hljs-title function_">setHtml</span>(html);         <span class="hljs-comment">// 更新 HTML 原始碼</span>
+  <span class="hljs-title function_">setReadingHtml</span>(html);  <span class="hljs-comment">// 更新美化閱讀排版</span>
+}</code></pre>
+</div><h3 id="h-6">3. 任務清單與刪除線</h3>
+<ul>
+<li class="task-list-item list-none py-0.5"><span class="flex items-start gap-2">
+          <input type="checkbox" disabled="" checked="" class="w-4 h-4 mt-1 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500/30 accent-indigo-500 cursor-default shrink-0">
+          <span class="task-list-text">支援 GFM 表格渲染</span>
+        </span></li><li class="task-list-item list-none py-0.5"><span class="flex items-start gap-2">
+          <input type="checkbox" disabled="" checked="" class="w-4 h-4 mt-1 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500/30 accent-indigo-500 cursor-default shrink-0">
+          <span class="task-list-text">支援 <del>舊版</del> highlight.js 程式碼著色</span>
+        </span></li><li class="task-list-item list-none py-0.5"><span class="flex items-start gap-2">
+          <input type="checkbox" disabled="" checked="" class="w-4 h-4 mt-1 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500/30 accent-indigo-500 cursor-default shrink-0">
+          <span class="task-list-text">支援 Mermaid 流程圖載入與渲染</span>
+        </span></li><li class="task-list-item list-none py-0.5"><span class="flex items-start gap-2">
+          <input type="checkbox" disabled="" class="w-4 h-4 mt-1 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500/30 accent-indigo-500 cursor-default shrink-0">
+          <span class="task-list-text">支援更多客製化 Markdown 解析選項</span>
+        </span></li></ul>
+<h3 id="h-7">4. Mermaid 流程圖</h3>
+<div class="mermaid-wrapper my-6 select-none" contenteditable="false" data-mermaid-code="Zmxvd2NoYXJ0IFRECiAgICBBW01hcmtkb3duIOe3qOi8r+WNgF0gPC0tPiBCKEhUTUwg5Y6f5aeL56K85Y2AKQogICAgQSA8LS0+IEMo576O5YyW6Zax6K6A5o6S54mI5Y2AKQogICAgQiA8LS0+IEMKICAgIEMgLS0+fCLpm5nmk4rllZ/nlKggKOaomea6li/lrrnpjK8pInwgRFtjb250ZW50RWRpdGFibGUg6KaW6Ka657eo6LyvXQogICAgRCAtLT586Ieq5YuV5ZCM5q2lfCBBCiAgICAKICAgIHN0eWxlIEEgZmlsbDojZTBlN2ZmLHN0cm9rZTojNjM2NmYxLHN0cm9rZS13aWR0aDoycHg7CiAgICBzdHlsZSBCIGZpbGw6I2YxZjVmOSxzdHJva2U6IzY0NzQ4YixzdHJva2Utd2lkdGg6MnB4OwogICAgc3R5bGUgQyBmaWxsOiNlY2ZkZjUsc3Ryb2tlOiMxMGI5ODEsc3Ryb2tlLXdpZHRoOjJweDsKICAgIHN0eWxlIEQgZmlsbDojZmVmM2M3LHN0cm9rZTojZDk3NzA2LHN0cm9rZS13aWR0aDoycHg7" data-mermaid-rendered="true"><svg id="mermaid-svg-1788633139596-53-1w53" width="100%" xmlns="http://www.w3.org/2000/svg" class="flowchart" style="max-width: 276.43890380859375px;" viewBox="0 0 276.43890380859375 430" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#mermaid-svg-1788633139596-53-1w53{font-family:Inter,system-ui,sans-serif;font-size:16px;fill:#333;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mermaid-svg-1788633139596-53-1w53 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mermaid-svg-1788633139596-53-1w53 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mermaid-svg-1788633139596-53-1w53 .error-icon{fill:#552222;}#mermaid-svg-1788633139596-53-1w53 .error-text{fill:#552222;stroke:#552222;}#mermaid-svg-1788633139596-53-1w53 .edge-thickness-normal{stroke-width:1px;}#mermaid-svg-1788633139596-53-1w53 .edge-thickness-thick{stroke-width:3.5px;}#mermaid-svg-1788633139596-53-1w53 .edge-pattern-solid{stroke-dasharray:0;}#mermaid-svg-1788633139596-53-1w53 .edge-thickness-invisible{stroke-width:0;fill:none;}#mermaid-svg-1788633139596-53-1w53 .edge-pattern-dashed{stroke-dasharray:3;}#mermaid-svg-1788633139596-53-1w53 .edge-pattern-dotted{stroke-dasharray:2;}#mermaid-svg-1788633139596-53-1w53 .marker{fill:#64748b;stroke:#64748b;}#mermaid-svg-1788633139596-53-1w53 .marker.cross{stroke:#64748b;}#mermaid-svg-1788633139596-53-1w53 svg{font-family:Inter,system-ui,sans-serif;font-size:16px;}#mermaid-svg-1788633139596-53-1w53 p{margin:0;}#mermaid-svg-1788633139596-53-1w53 .label{font-family:Inter,system-ui,sans-serif;color:#333;}#mermaid-svg-1788633139596-53-1w53 .cluster-label text{fill:#333;}#mermaid-svg-1788633139596-53-1w53 .cluster-label span{color:#333;}#mermaid-svg-1788633139596-53-1w53 .cluster-label span p{background-color:transparent;}#mermaid-svg-1788633139596-53-1w53 .label text,#mermaid-svg-1788633139596-53-1w53 span{fill:#333;color:#333;}#mermaid-svg-1788633139596-53-1w53 .node rect,#mermaid-svg-1788633139596-53-1w53 .node circle,#mermaid-svg-1788633139596-53-1w53 .node ellipse,#mermaid-svg-1788633139596-53-1w53 .node polygon,#mermaid-svg-1788633139596-53-1w53 .node path{fill:#ECECFF;stroke:#9370DB;stroke-width:1px;}#mermaid-svg-1788633139596-53-1w53 .rough-node .label text,#mermaid-svg-1788633139596-53-1w53 .node .label text,#mermaid-svg-1788633139596-53-1w53 .image-shape .label,#mermaid-svg-1788633139596-53-1w53 .icon-shape .label{text-anchor:middle;}#mermaid-svg-1788633139596-53-1w53 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#mermaid-svg-1788633139596-53-1w53 .rough-node .label,#mermaid-svg-1788633139596-53-1w53 .node .label,#mermaid-svg-1788633139596-53-1w53 .image-shape .label,#mermaid-svg-1788633139596-53-1w53 .icon-shape .label{text-align:center;}#mermaid-svg-1788633139596-53-1w53 .node.clickable{cursor:pointer;}#mermaid-svg-1788633139596-53-1w53 .root .anchor path{fill:#64748b!important;stroke-width:0;stroke:#64748b;}#mermaid-svg-1788633139596-53-1w53 .arrowheadPath{fill:#333333;}#mermaid-svg-1788633139596-53-1w53 .edgePaths .path{stroke:#64748b;stroke-width:1px;}#mermaid-svg-1788633139596-53-1w53 .flowchart-link{stroke:#64748b;fill:none;}#mermaid-svg-1788633139596-53-1w53 .edgeLabel{background-color:rgba(232,232,232, 0.8);text-align:center;}#mermaid-svg-1788633139596-53-1w53 .edgeLabel p{background-color:rgba(232,232,232, 0.8);}#mermaid-svg-1788633139596-53-1w53 .edgeLabel rect{opacity:0.5;background-color:rgba(232,232,232, 0.8);fill:rgba(232,232,232, 0.8);}#mermaid-svg-1788633139596-53-1w53 .labelBkg{background-color:rgba(232, 232, 232, 0.5);}#mermaid-svg-1788633139596-53-1w53 .cluster rect{fill:#ffffde;stroke:#aaaa33;stroke-width:1px;}#mermaid-svg-1788633139596-53-1w53 .cluster text{fill:#333;}#mermaid-svg-1788633139596-53-1w53 .cluster span{color:#333;}#mermaid-svg-1788633139596-53-1w53 .node .collapsed-indicator{fill:#aaaa33;stroke:none;opacity:0.6;}#mermaid-svg-1788633139596-53-1w53 .node .collapsed-separator{stroke:#aaaa33;stroke-width:0.75px;}#mermaid-svg-1788633139596-53-1w53 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:Inter,system-ui,sans-serif;font-size:12px;background:#f8fafc;border:1px solid #aaaa33;border-radius:2px;pointer-events:none;z-index:100;}#mermaid-svg-1788633139596-53-1w53 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#333;}#mermaid-svg-1788633139596-53-1w53 rect.text{fill:none;stroke-width:0;}#mermaid-svg-1788633139596-53-1w53 .icon-shape,#mermaid-svg-1788633139596-53-1w53 .image-shape{background-color:rgba(232,232,232, 0.8);text-align:center;}#mermaid-svg-1788633139596-53-1w53 .icon-shape p,#mermaid-svg-1788633139596-53-1w53 .image-shape p{background-color:rgba(232,232,232, 0.8);padding:2px;}#mermaid-svg-1788633139596-53-1w53 .icon-shape .label rect,#mermaid-svg-1788633139596-53-1w53 .image-shape .label rect{opacity:0.5;background-color:rgba(232,232,232, 0.8);fill:rgba(232,232,232, 0.8);}#mermaid-svg-1788633139596-53-1w53 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#mermaid-svg-1788633139596-53-1w53 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#mermaid-svg-1788633139596-53-1w53 .node .neo-node{stroke:#9370DB;}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].node rect,#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].cluster rect,#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].node polygon{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].swimlane.cluster rect{filter:none;}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].node path{stroke:#9370DB;stroke-width:1px;}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].node .outer-path{filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].node .neo-line path{stroke:#9370DB;filter:none;}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].node circle{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].node circle .state-start{fill:#000000;}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].icon-shape .icon{fill:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mermaid-svg-1788633139596-53-1w53 [data-look="neo"].icon-shape .icon-neo path{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mermaid-svg-1788633139596-53-1w53 :root{--mermaid-font-family:Inter,system-ui,sans-serif;}</style><g><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></path></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></path></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"></path></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"></polygon></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></circle></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></circle></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"></circle></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"></circle></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"></path></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"></path></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;"></path></marker><marker id="mermaid-svg-1788633139596-53-1w53_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;"></path></marker><g class="root"><g class="clusters"></g><g class="edgePaths"><path d="M132.525,66L132.525,69.5C132.525,73,132.525,80,132.525,87C132.525,94,132.525,101,132.525,104.5L132.525,108" id="mermaid-svg-1788633139596-53-1w53-L_A_B_0" class=" edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_A_B_0" data-points="W3sieCI6MTMyLjUyNTAwOTE1NTI3MzQ0LCJ5Ijo2Mn0seyJ4IjoxMzIuNTI1MDA5MTU1MjczNDQsInkiOjg3fSx7IngiOjEzMi41MjUwMDkxNTUyNzM0NCwieSI6MTEyfV0=" data-look="classic" marker-start="url(#mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointStart)" marker-end="url(#mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointEnd)"></path><path d="M74.152,63.768L66.296,67.64C58.44,71.512,42.727,79.256,34.87,91.795C27.014,104.333,27.014,121.667,27.014,141C27.014,160.333,27.014,181.667,31.673,197.986C36.332,214.304,45.651,225.609,50.31,231.261L54.969,236.913" id="mermaid-svg-1788633139596-53-1w53-L_A_C_0" class=" edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_A_C_0" data-points="W3sieCI6NzcuNzQwMzk1MTc5MTYxNjUsInkiOjYyfSx7IngiOjI3LjAxMzkwMDc1NjgzNTkzOCwieSI6ODd9LHsieCI6MjcuMDEzOTAwNzU2ODM1OTM4LCJ5IjoxMzl9LHsieCI6MjcuMDEzOTAwNzU2ODM1OTM4LCJ5IjoyMDN9LHsieCI6NTcuNTEzMjA1NTI4MjU5MjgsInkiOjI0MH1d" data-look="classic" marker-start="url(#mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointStart)" marker-end="url(#mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointEnd)"></path><path d="M132.525,170L132.525,175.5C132.525,181,132.525,192,127.866,203.152C123.207,214.304,113.888,225.609,109.229,231.261L104.57,236.913" id="mermaid-svg-1788633139596-53-1w53-L_B_C_0" class=" edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_B_C_0" data-points="W3sieCI6MTMyLjUyNTAwOTE1NTI3MzQ0LCJ5IjoxNjZ9LHsieCI6MTMyLjUyNTAwOTE1NTI3MzQ0LCJ5IjoyMDN9LHsieCI6MTAyLjAyNTcwNDM4Mzg1MDEsInkiOjI0MH1d" data-look="classic" marker-start="url(#mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointStart)" marker-end="url(#mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointEnd)"></path><path d="M79.769,294L79.769,300.167C79.769,306.333,79.769,318.667,84.429,330.486C89.088,342.304,98.406,353.609,103.065,359.261L107.725,364.913" id="mermaid-svg-1788633139596-53-1w53-L_C_D_0" class=" edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_C_D_0" data-points="W3sieCI6NzkuNzY5NDU0OTU2MDU0NjksInkiOjI5NH0seyJ4Ijo3OS43Njk0NTQ5NTYwNTQ2OSwieSI6MzMxfSx7IngiOjExMC4yNjg3NTk3Mjc0NzgwMywieSI6MzY4fV0=" data-look="classic" marker-end="url(#mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointEnd)"></path><path d="M177.038,368L187.204,361.833C197.37,355.667,217.703,343.333,227.87,326.5C238.036,309.667,238.036,288.333,238.036,267C238.036,245.667,238.036,224.333,238.036,203C238.036,181.667,238.036,160.333,238.036,141C238.036,121.667,238.036,104.333,230.18,91.795C222.323,79.256,206.61,71.512,198.754,67.64L190.898,63.768" id="mermaid-svg-1788633139596-53-1w53-L_D_A_0" class=" edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_D_A_0" data-points="W3sieCI6MTc3LjAzNzUwODAxMDg2NDI2LCJ5IjozNjh9LHsieCI6MjM4LjAzNjExNzU1MzcxMDk0LCJ5IjozMzF9LHsieCI6MjM4LjAzNjExNzU1MzcxMDk0LCJ5IjoyNjd9LHsieCI6MjM4LjAzNjExNzU1MzcxMDk0LCJ5IjoyMDN9LHsieCI6MjM4LjAzNjExNzU1MzcxMDk0LCJ5IjoxMzl9LHsieCI6MjM4LjAzNjExNzU1MzcxMDk0LCJ5Ijo4N30seyJ4IjoxODcuMzA5NjIzMTMxMzg1MjIsInkiOjYyfV0=" data-look="classic" marker-end="url(#mermaid-svg-1788633139596-53-1w53_flowchart-v2-pointEnd)"></path></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_A_B_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel "></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_A_C_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel "></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_B_C_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel "></span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(79.76945495605469, 331)"><g class="label" data-id="L_C_D_0" transform="translate(-71.76945495605469, -12)"><foreignObject width="143.53890991210938" height="24"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel "><p>雙擊啟用 (標準/容錯)</p></span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(238.03611755371094, 203)"><g class="label" data-id="L_D_A_0" transform="translate(-30.40277862548828, -12)"><foreignObject width="60.80555725097656" height="24"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel "><p>自動同步</p></span></div></foreignObject></g></g></g><g class="nodes"><g class="node default  " id="mermaid-svg-1788633139596-53-1w53-flowchart-A-0" data-look="classic" transform="translate(132.52500915527344, 35)"><rect class="basic label-container" style="fill:#e0e7ff !important;stroke:#6366f1 !important;stroke-width:2px !important" x="-94.94166564941406" y="-27" width="189.88333129882812" height="54"></rect><g class="label" style="" transform="translate(-64.94166564941406, -12)"><rect></rect><foreignObject width="129.88333129882812" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel "><p>Markdown 編輯區</p></span></div></foreignObject></g></g><g class="node default  " id="mermaid-svg-1788633139596-53-1w53-flowchart-B-1" data-look="classic" transform="translate(132.52500915527344, 139)"><rect class="basic label-container" style="fill:#f1f5f9 !important;stroke:#64748b !important;stroke-width:2px !important" rx="5" ry="5" x="-70.51111221313477" y="-27" width="141.02222442626953" height="54"></rect><g class="label" style="" transform="translate(-55.511112213134766, -12)"><rect></rect><foreignObject width="111.02222442626953" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel "><p>HTML 原始碼區</p></span></div></foreignObject></g></g><g class="node default  " id="mermaid-svg-1788633139596-53-1w53-flowchart-C-3" data-look="classic" transform="translate(79.76945495605469, 267)"><rect class="basic label-container" style="fill:#ecfdf5 !important;stroke:#10b981 !important;stroke-width:2px !important" rx="5" ry="5" x="-68.20277786254883" y="-27" width="136.40555572509766" height="54"></rect><g class="label" style="" transform="translate(-53.20277786254883, -12)"><rect></rect><foreignObject width="106.40555572509766" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel "><p>美化閱讀排版區</p></span></div></foreignObject></g></g><g class="node default  " id="mermaid-svg-1788633139596-53-1w53-flowchart-D-7" data-look="classic" transform="translate(132.52500915527344, 395)"><rect class="basic label-container" style="fill:#fef3c7 !important;stroke:#d97706 !important;stroke-width:2px !important" x="-121.58611297607422" y="-27" width="243.17222595214844" height="54"></rect><g class="label" style="" transform="translate(-91.58611297607422, -12)"><rect></rect><foreignObject width="183.17222595214844" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel "><p>contentEditable 視覺編輯</p></span></div></foreignObject></g></g></g></g></g><defs><filter id="mermaid-svg-1788633139596-53-1w53-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"></feDropShadow></filter></defs><defs><filter id="mermaid-svg-1788633139596-53-1w53-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"></feDropShadow></filter></defs></svg></div><blockquote>
+<p><strong>提示</strong>：雙擊右側「美化閱讀排版」的任意文字即可進行視覺化編輯，點擊空白處或其它面板即完成同步。</p>
+</blockquote>
+<hr>
+<p>祝您使用愉快！點選上方工具列的「PDF 匯出 ▾」即可體驗所有匯出功能。</p>
+
+        </article>
+      </div>
+    </main>
+  </div>
+
+  <!-- Highlight.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+
+  <script>
+    // Theme Management
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = localStorage.getItem('md2html_theme') || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggleBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    themeToggleBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('md2html_theme', next);
+      themeToggleBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+    });
+
+    // Font Size Scaling
+    let currentFontSize = parseInt(localStorage.getItem('md2html_font_size') || '16', 10);
+    document.documentElement.style.setProperty('--font-size-base', currentFontSize + 'px');
+
+    document.getElementById('font-inc-btn').addEventListener('click', () => {
+      if (currentFontSize < 24) {
+        currentFontSize += 1;
+        document.documentElement.style.setProperty('--font-size-base', currentFontSize + 'px');
+        localStorage.setItem('md2html_font_size', currentFontSize);
+      }
+    });
+
+    document.getElementById('font-dec-btn').addEventListener('click', () => {
+      if (currentFontSize > 12) {
+        currentFontSize -= 1;
+        document.documentElement.style.setProperty('--font-size-base', currentFontSize + 'px');
+        localStorage.setItem('md2html_font_size', currentFontSize);
+      }
+    });
+
+    // Sidebar Toggle
+    const sidebar = document.getElementById('sidebar');
+    const openSidebarBtn = document.getElementById('open-sidebar-btn');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+
+    openSidebarBtn.addEventListener('click', () => {
+      document.body.classList.toggle('sidebar-expanded');
+    });
+
+    closeSidebarBtn.addEventListener('click', () => {
+      document.body.classList.remove('sidebar-expanded');
+    });
+
+    // Auto-collapse sidebar on mobile click
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        if (e.target.closest('.toc-link')) {
+          document.body.classList.remove('sidebar-expanded');
+        }
+      }
+    });
+
+    // Code block copy buttons & Syntax highlighting
+    function initCodeBlocks() {
+      if (window.hljs) {
+        window.hljs.highlightAll();
+      }
+      document.querySelectorAll('pre code').forEach((codeBlock) => {
+        const pre = codeBlock.parentNode;
+        if (pre.querySelector('.copy-btn')) return;
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = '複製';
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+            btn.textContent = '已複製！';
+            setTimeout(() => { btn.textContent = '複製'; }, 2000);
+          });
+        });
+        pre.appendChild(btn);
+      });
+    }
+
+    // Scrollspy for TOC
+    function initScrollspy() {
+      const headings = document.querySelectorAll('.article-content h1, .article-content h2, .article-content h3, .article-content h4');
+      const tocLinks = document.querySelectorAll('.toc-link');
+      if (headings.length === 0 || tocLinks.length === 0) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            tocLinks.forEach(link => {
+              if (link.getAttribute('data-id') === id) {
+                link.classList.add('active');
+              } else {
+                link.classList.remove('active');
+              }
+            });
+          }
+        });
+      }, { rootMargin: '-80px 0px -70% 0px' });
+
+      headings.forEach(h => observer.observe(h));
+    }
+
+    // Mermaid Initialization
+    function initMermaid() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
+            securityLevel: 'loose'
+          });
+          window.mermaid.run();
+        } catch (e) {
+          console.warn('Mermaid rendering error:', e);
+        }
+      }
+    }
+
+    
+    // Direct initialization for non-encrypted document
+    document.addEventListener('DOMContentLoaded', () => {
+      initCodeBlocks();
+      initScrollspy();
+      initMermaid();
+    });
+    
+  </script>
+</body>
+</html>
