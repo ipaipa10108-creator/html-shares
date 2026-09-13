@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>�️ MCP 很方便，但你真的敢讓 Agent 隨便 call 嗎？</title>
+
+  <!-- Open Graph & Social Preview (LINE, Telegram, Facebook, X, etc.) -->
+  <meta property="og:title" content="�️ MCP 很方便，但你真的敢讓 Agent 隨便 call 嗎？">
+  <meta property="og:description" content="MCP（Model Context Protocol）正在快速成為 Agent 連接外部工具的重要標準。">
+  <meta property="og:type" content="article">
+  <meta name="description" content="MCP（Model Context Protocol）正在快速成為 Agent 連接外部工具的重要標準。">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="�️ MCP 很方便，但你真的敢讓 Agent 隨便 call 嗎？">
+  <meta name="twitter:description" content="MCP（Model Context Protocol）正在快速成為 Agent 連接外部工具的重要標準。">
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Highlight.js for code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
+  <style>
+    :root {
+      --bg-body: #f8fafc;
+      --bg-panel: #ffffff;
+      --bg-card: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
+      --accent-light: rgba(99, 102, 241, 0.08);
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+      --font-heading: 'Outfit', 'Noto Sans TC', sans-serif;
+      --font-body: 'Inter', 'Noto Sans TC', system-ui, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --toc-hover: rgba(99, 102, 241, 0.04);
+      --font-size-base: 16px;
+    }
+
+    [data-theme="dark"] {
+      --bg-body: #090d16;
+      --bg-panel: #0f172a;
+      --bg-card: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #818cf8;
+      --accent-gradient: linear-gradient(135deg, #818cf8, #6366f1);
+      --accent-light: rgba(129, 140, 248, 0.12);
+      --border: #1e293b;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+      --toc-hover: rgba(129, 140, 248, 0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: var(--font-size-base);
+      line-height: 1.8;
+      transition: background-color 0.3s, color 0.3s;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      display: flex;
+      max-width: 1440px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .sidebar {
+      width: 300px;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      transition: transform 0.3s, background-color 0.3s, border-color 0.3s;
+      transform: translateX(-300px);
+    }
+
+    body.sidebar-expanded .sidebar { transform: translateX(0); }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-title {
+      font-family: var(--font-heading);
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toc-scroll {
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 0.25rem;
+    }
+    .toc-scroll::-webkit-scrollbar { width: 4px; }
+    .toc-scroll::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 4px; }
+
+    .toc-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.6rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+      margin-bottom: 0.125rem;
+      line-height: 1.4;
+    }
+    .toc-link:hover {
+      background-color: var(--toc-hover);
+      color: var(--accent);
+    }
+    .toc-link.active {
+      background-color: var(--accent-light);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .toc-link.l2 { padding-left: 1.5rem; font-size: 0.775rem; }
+    .toc-link.l3 { padding-left: 2.25rem; font-size: 0.725rem; }
+
+    .toc-bullet {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: currentColor;
+      opacity: 0.4;
+      flex-shrink: 0;
+    }
+    .toc-link.active .toc-bullet { opacity: 1; transform: scale(1.4); }
+
+    .toc-empty {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      padding: 1rem 0;
+      text-align: center;
+    }
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      margin-left: 0;
+      transition: margin-left 0.3s;
+    }
+    body.sidebar-expanded .main-content { margin-left: 300px; }
+
+    .header-bar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background-color: var(--bg-body);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-icon {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+    .toggle-sidebar-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      z-index: 20;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    .toggle-sidebar-btn:hover { transform: scale(1.05); }
+
+    .article-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 6rem;
+    }
+
+    /* Content Typography & Layout */
+    .article-content { line-height: 1.8; word-break: break-word; }
+    .article-content h1, .article-content h2, .article-content h3,
+    .article-content h4, .article-content h5, .article-content h6 {
+      font-family: var(--font-heading);
+      color: var(--text-main);
+      font-weight: 700;
+      margin-top: 2rem;
+      margin-bottom: 0.8rem;
+      line-height: 1.35;
+    }
+    .article-content h1 { font-size: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-top: 0; }
+    .article-content h2 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    .article-content h3 { font-size: 1.25rem; }
+    .article-content p { margin-bottom: 1.2rem; }
+    .article-content ul, .article-content ol { margin-bottom: 1.2rem; padding-left: 1.5rem; }
+    .article-content li { margin-bottom: 0.35rem; }
+    .article-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 0.6rem 1.2rem;
+      margin: 1.5rem 0;
+      background: var(--bg-card);
+      border-radius: 0 0.5rem 0.5rem 0;
+      color: var(--text-muted);
+    }
+    .article-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    .article-content th, .article-content td {
+      padding: 0.65rem 0.9rem;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .article-content th { background: var(--bg-card); font-weight: 600; }
+    .article-content pre {
+      position: relative;
+      margin: 1.5rem 0;
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    .article-content code {
+      font-family: var(--font-mono);
+      font-size: 0.875em;
+    }
+    .article-content p code, .article-content li code {
+      background: var(--bg-card);
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.3rem;
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+    .article-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0; }
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(15, 23, 42, 0.7);
+      color: #94a3b8;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.4rem;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { background: rgba(15, 23, 42, 0.9); color: #fff; }
+
+    /* Lock Screen Overlay (For Password-Protected Content) */
+    #lock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: var(--bg-body);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    body:not(.is-locked) #lock-screen {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .lock-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2.25rem 2rem;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      position: relative;
+    }
+
+    .lock-icon-wrap {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.25rem;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      box-shadow: 0 0 24px rgba(99, 102, 241, 0.2);
+    }
+
+    .lock-title {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .lock-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1.75rem;
+      line-height: 1.5;
+    }
+
+    .password-field-wrap {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 0.85rem 2.85rem 0.85rem 1.15rem;
+      border: 1.5px solid var(--border);
+      background: var(--bg-body);
+      color: var(--text-main);
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .password-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .toggle-pwd-vis {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .toggle-pwd-vis:hover { color: var(--text-main); }
+
+    .unlock-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .unlock-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+    .unlock-btn:active { transform: translateY(0); }
+    .unlock-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .error-msg {
+      margin-top: 0.85rem;
+      font-size: 0.825rem;
+      color: #ef4444;
+      font-weight: 600;
+      min-height: 1.25rem;
+      transition: opacity 0.2s;
+    }
+
+    .shake {
+      animation: shake-anim 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    @keyframes shake-anim {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(3px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+
+    /* Mobile view */
+    @media (max-width: 768px) {
+      body.sidebar-expanded .sidebar { transform: translateX(0); box-shadow: var(--shadow-lg); }
+      body.sidebar-expanded .main-content { margin-left: 0; }
+      .article-wrap { padding: 1.5rem 1rem 4rem; }
+      .article-content h1 { font-size: 1.6rem; }
+      .article-content h2 { font-size: 1.3rem; }
+      .sidebar { width: 280px; }
+      .lock-card { padding: 1.75rem 1.25rem; }
+    }
+  </style>
+</head>
+<body class="sidebar-expanded">
+
+  
+
+  <!-- Main Container -->
+  <div class="app-container" id="main-app-container">
+    <!-- Sidebar / TOC -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">📑 文件大綱</span>
+        <button class="btn-icon" id="close-sidebar-btn" title="關閉大綱">✕</button>
+      </div>
+      <div class="toc-scroll" id="toc-container">
+        <a class="toc-link l1" href="#h-0" data-id="h-0">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🛡️ MCP 很方便，但你真的敢讓 Agent 隨便 call 嗎？</span>
+      </a>
+<a class="toc-link l1" href="#h-1" data-id="h-1">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🧵 MCP：讓 Agent 能「到」工具的地方</span>
+      </a>
+<a class="toc-link l1" href="#h-2" data-id="h-2">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🧨 攻擊已經來了：MCP 生態面臨的威脅</span>
+      </a>
+<a class="toc-link l1" href="#h-3" data-id="h-3">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🔍 真正的 Execution Boundary</span>
+      </a>
+<a class="toc-link l1" href="#h-4" data-id="h-4">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🛡️ DROS VajraClaw：在執行邊界設下真正的 Gate</span>
+      </a>
+<a class="toc-link l2" href="#h-5" data-id="h-5">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">✅ 核心思想</span>
+      </a>
+<a class="toc-link l2" href="#h-6" data-id="h-6">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🏗️ 架構示意</span>
+      </a>
+<a class="toc-link l1" href="#h-7" data-id="h-7">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">⚙️ 工程師如何使用 DROS？</span>
+      </a>
+<a class="toc-link l2" href="#h-8" data-id="h-8">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🛠️ 快速上手流程</span>
+      </a>
+<a class="toc-link l2" href="#h-9" data-id="h-9">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">📋 執行治理流程</span>
+      </a>
+<a class="toc-link l1" href="#h-10" data-id="h-10">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🧠 一句話總結</span>
+      </a>
+<a class="toc-link l1" href="#h-11" data-id="h-11">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🆓 立即體驗：DROS VajraClaw Hacker Edition</span>
+      </a>
+<a class="toc-link l1" href="#h-12" data-id="h-12">
+        <span class="toc-bullet"></span>
+        <span class="toc-text">🔖 相關標籤</span>
+      </a>
+
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="header-bar">
+        <div class="header-controls">
+          <button class="btn-icon" id="open-sidebar-btn" title="展開大綱">📑 目錄</button>
+        </div>
+        <div class="header-controls">
+          <button class="btn-icon" id="font-dec-btn" title="縮小字體">A-</button>
+          <button class="btn-icon" id="font-inc-btn" title="放大字體">A+</button>
+          <button class="btn-icon" id="theme-toggle-btn" title="深淺色切換">🌙</button>
+        </div>
+      </header>
+
+      <div class="article-wrap">
+        <article class="article-content" id="article-content">
+          <h1 id="h-0">🛡️ MCP 很方便，但你真的敢讓 Agent 隨便 call 嗎？</h1>
+<blockquote>
+<p>[!WARNING]<br><strong>MCP 解決了 Agent「怎麼連到工具」，卻不等同於解決了 Agent「這一次到底能不能執行」。</strong></p>
+</blockquote>
+<hr>
+<h2 id="h-1">🧵 MCP：讓 Agent 能「到」工具的地方</h2>
+<p>MCP（Model Context Protocol）正在快速成為 Agent 連接外部工具的重要標準。</p>
+<ul>
+<li><strong>支援平台</strong>：Claude Desktop、Cursor、Claude Code、Gemini CLI、Copilot CLI…</li><li><strong>功能廣泛</strong>：Agent 可透過 MCP 讀檔案、查資料庫、操作 GitHub、呼叫 API，甚至執行系統操作。</li></ul>
+<blockquote>
+<p>[!NOTE]<br><strong>關鍵問題</strong>：MCP 僅解決了「連接」，未保證「執行」的安全性。</p>
+</blockquote>
+<hr>
+<h2 id="h-2">🧨 攻擊已經來了：MCP 生態面臨的威脅</h2>
+<p>近期 MCP 生態系陸續曝現多種攻擊與漏洞：</p>
+<table>
+<thead>
+<tr>
+<th>攻擊類型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>惡意 MCP Server / 供應鏈攻擊</strong></td>
+<td>偽裝成正常工具，等 Agent 完成數次正常操作後才觸發惡意 payload。</td>
+</tr>
+<tr>
+<td><strong>Prompt / Tool Poisoning</strong></td>
+<td>利用工具描述、PR 內容等資料，影響模型決策，誘導 Agent 執行不當 Action。</td>
+</tr>
+<tr>
+<td><strong>SSRF、Path Traversal、Command Injection、RCE</strong></td>
+<td>MCP Server 或依賴元件漏洞，使 Agent 成為攻擊鏈一環。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>[!IMPORTANT]<br><strong>共通點</strong>：攻擊者最終目標皆為讓某個「Action」真正發生。</p>
+</blockquote>
+<hr>
+<h2 id="h-3">🔍 真正的 Execution Boundary</h2>
+<div class="code-block-wrapper">
+  <button class="copy-code-btn" aria-label="Copy code" title="複製此程式碼">
+    <svg class="copy-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+    <svg class="check-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  </button>
+  <pre><code class="language- hljs language-dart" data-highlighted="yes"><span class="hljs-title class_">Agent</span> <span class="hljs-title class_">Reasoning</span> → <span class="hljs-title class_">Tool</span> <span class="hljs-title class_">Call</span> → 【<span class="hljs-title class_">Execution</span> <span class="hljs-title class_">Boundary</span>】 → 系統 / API / 檔案 / 資源</code></pre>
+</div><blockquote>
+<p>[!TIP]<br><strong>防守重點不在「Agent」，而在「Execution Boundary」這條線上。</strong></p>
+</blockquote>
+<hr>
+<h2 id="h-4">🛡️ DROS VajraClaw：在執行邊界設下真正的 Gate</h2>
+<blockquote>
+<p>[!CAUTION]<br><strong>DROS 不試圖教 Agent「不要做壞事」。</strong><br>因為我們知道：Agent 可能被攻擊、被欺騙、甚至被攻陷。</p>
+</blockquote>
+<h3 id="h-5">✅ 核心思想</h3>
+<table>
+<thead>
+<tr>
+<th>傳統 Guardrail</th>
+<th>DROS VajraClaw</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agent → LLM/Guradrail → Tool → Execution</td>
+<td>Agent → Tool Call → 【Deterministic Policy Gate】 → Execution</td>
+</tr>
+</tbody></table>
+<h3 id="h-6">🏗️ 架構示意</h3>
+<div class="code-block-wrapper">
+  <button class="copy-code-btn" aria-label="Copy code" title="複製此程式碼">
+    <svg class="copy-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+    <svg class="check-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  </button>
+  <pre><code class="language- hljs language-dart" data-highlighted="yes"><span class="hljs-title class_">Agent</span>
+│
+│ MCP <span class="hljs-title class_">Tool</span> <span class="hljs-title class_">Call</span>
+▼
+┌─────────────────────┐
+│ DROS <span class="hljs-title class_">VajraClaw</span>      │
+│                     │
+│ DIT <span class="hljs-title class_">Identity</span>        │
+│ <span class="hljs-title class_">Capability</span> <span class="hljs-title class_">Bitmap</span>   │
+│ <span class="hljs-title class_">Vajra</span> <span class="hljs-title class_">Policy</span>        │
+│ <span class="hljs-title class_">Execution</span> <span class="hljs-title class_">Binding</span>   │
+└─────────┬───────────┘
+          │
+    ┌─────┴─────┐
+    │           │
+  <span class="hljs-title class_">Allow</span>       <span class="hljs-title class_">Deny</span>
+    │           │
+    ▼           ▼
+<span class="hljs-title class_">Execute</span>    FAIL-CLOSED</code></pre>
+</div><blockquote>
+<p>[!WARNING]<br><strong>授權 → 執行</strong><br><strong>未授權 → 在進入 Execution Boundary 前直接拒絕</strong></p>
+</blockquote>
+<hr>
+<h2 id="h-7">⚙️ 工程師如何使用 DROS？</h2>
+<blockquote>
+<p>[!TIP]<br><strong>無需重寫 MCP Server 或在每個 Agent Framework 中重複實作 Authorization。</strong></p>
+</blockquote>
+<h3 id="h-8">🛠️ 快速上手流程</h3>
+<ol>
+<li><strong>啟動 DROS Gateway</strong></li><li><strong>定義 Vajra Policy</strong></li><li><strong>將 Agent 的 MCP Tool Call 經過 DROS 進行執行治理</strong></li></ol>
+<h3 id="h-9">📋 執行治理流程</h3>
+<div class="code-block-wrapper">
+  <button class="copy-code-btn" aria-label="Copy code" title="複製此程式碼">
+    <svg class="copy-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+    <svg class="check-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  </button>
+  <pre><code class="language- hljs language-dart" data-highlighted="yes"><span class="hljs-title class_">Principal</span> → <span class="hljs-title class_">Authorization</span> → <span class="hljs-title class_">Tool</span>/<span class="hljs-title class_">Action</span> <span class="hljs-title class_">Binding</span> → <span class="hljs-title class_">Policy</span> <span class="hljs-title class_">Gate</span> → <span class="hljs-title class_">Execution</span> → <span class="hljs-title class_">Audit</span> → <span class="hljs-title class_">Revocation</span>/<span class="hljs-title class_">Expiry</span></code></pre>
+</div><blockquote>
+<p>[!NOTE]<br><strong>這就是 Agent Security 最終必須補上的那一層：從「治理 Agent」走向「治理 Agent 的 Execution」。</strong></p>
+</blockquote>
+<hr>
+<h2 id="h-10">🧠 一句話總結</h2>
+<blockquote>
+<p>[!IMPORTANT]<br><strong>MCP 解決的是：Agent 怎麼使用工具。</strong><br><strong>DROS 解決的是：Agent 想使用工具時，這一次到底能不能執行。</strong></p>
+</blockquote>
+<ul>
+<li><strong>MCP 負責連接</strong></li><li><strong>DROS 負責執行治理</strong></li><li><strong>兩者不是競爭關係，而是互補</strong></li></ul>
+<blockquote>
+<p>[!CAUTION]<br><strong>當 Agentic AI 真正進入企業、雲端、Code、Browser、IoT 與 Physical AI 時，最終一定會碰到 Execution Boundary。</strong><br><strong>問題只是：你要不要在那裡放一道真正的 Gate。</strong></p>
+</blockquote>
+<hr>
+<h2 id="h-11">🆓 立即體驗：DROS VajraClaw Hacker Edition</h2>
+<blockquote>
+<p>[!TIP]<br><strong>提供個人開發者免費使用。</strong><br>如果你正在使用 MCP + Claude Code / Cursor / Gemini CLI / 其他 Agent，<br>可以直接試試把 Execution Governance 放到 Agent 與工具之間。</p>
+</blockquote>
+<p>👉 <strong>GitHub</strong>：<a href="https://github.com/Top-Celestial-Company-Ltd/DROS-VajraClaw-Hacker">https://github.com/Top-Celestial-Company-Ltd/DROS-VajraClaw-Hacker</a></p>
+<hr>
+<h2 id="h-12">🔖 相關標籤</h2>
+<p><code>#DROS</code> <code>#VajraClaw</code> <code>#MCP</code> <code>#ModelContextProtocol</code> <code>#AIAgent</code> <code>#AgenticAI</code> <code>#AISecurity</code> <code>#AgentSecurity</code> <code>#CyberSecurity</code> <code>#RuntimeSecurity</code> <code>#ExecutionSecurity</code> <code>#AI治理</code> <code>#AI資安</code> <code>#LLMSecurity</code> <code>#PromptInjection</code> <code>#ToolPoisoning</code> <code>#MCPServer</code> <code>#ZeroTrust</code> <code>#FailClosed</code> <code>#DeterministicSecurity</code> <code>#AgentGovernance</code> <code>#OpenSource</code></p>
+<blockquote>
+<p>[!NOTE]<br><strong>「AgentSecurity」的差別，用一般工程師也能秒懂的方式講出來。</strong></p>
+</blockquote>
+
+        </article>
+      </div>
+    </main>
+  </div>
+
+  <!-- Highlight.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  
+
+  <script>
+    // Theme Management
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = localStorage.getItem('md2html_theme') || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggleBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    themeToggleBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('md2html_theme', next);
+      themeToggleBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+    });
+
+    // Font Size Scaling
+    let currentFontSize = parseInt(localStorage.getItem('md2html_font_size') || '16', 10);
+    document.documentElement.style.setProperty('--font-size-base', currentFontSize + 'px');
+
+    document.getElementById('font-inc-btn').addEventListener('click', () => {
+      if (currentFontSize < 24) {
+        currentFontSize += 1;
+        document.documentElement.style.setProperty('--font-size-base', currentFontSize + 'px');
+        localStorage.setItem('md2html_font_size', currentFontSize);
+      }
+    });
+
+    document.getElementById('font-dec-btn').addEventListener('click', () => {
+      if (currentFontSize > 12) {
+        currentFontSize -= 1;
+        document.documentElement.style.setProperty('--font-size-base', currentFontSize + 'px');
+        localStorage.setItem('md2html_font_size', currentFontSize);
+      }
+    });
+
+    // Sidebar Toggle
+    const sidebar = document.getElementById('sidebar');
+    const openSidebarBtn = document.getElementById('open-sidebar-btn');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+
+    openSidebarBtn.addEventListener('click', () => {
+      document.body.classList.toggle('sidebar-expanded');
+    });
+
+    closeSidebarBtn.addEventListener('click', () => {
+      document.body.classList.remove('sidebar-expanded');
+    });
+
+    // Auto-collapse sidebar on mobile click
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        if (e.target.closest('.toc-link')) {
+          document.body.classList.remove('sidebar-expanded');
+        }
+      }
+    });
+
+    // Code block copy buttons & Syntax highlighting
+    function initCodeBlocks() {
+      if (window.hljs) {
+        window.hljs.highlightAll();
+      }
+      document.querySelectorAll('pre code').forEach((codeBlock) => {
+        const pre = codeBlock.parentNode;
+        if (pre.querySelector('.copy-btn')) return;
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = '複製';
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+            btn.textContent = '已複製！';
+            setTimeout(() => { btn.textContent = '複製'; }, 2000);
+          });
+        });
+        pre.appendChild(btn);
+      });
+    }
+
+    // Scrollspy for TOC
+    function initScrollspy() {
+      const headings = document.querySelectorAll('.article-content h1, .article-content h2, .article-content h3, .article-content h4');
+      const tocLinks = document.querySelectorAll('.toc-link');
+      if (headings.length === 0 || tocLinks.length === 0) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            tocLinks.forEach(link => {
+              if (link.getAttribute('data-id') === id) {
+                link.classList.add('active');
+              } else {
+                link.classList.remove('active');
+              }
+            });
+          }
+        });
+      }, { rootMargin: '-80px 0px -70% 0px' });
+
+      headings.forEach(h => observer.observe(h));
+    }
+
+    // Mermaid Initialization
+    function initMermaid() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
+            securityLevel: 'loose'
+          });
+          window.mermaid.run();
+        } catch (e) {
+          console.warn('Mermaid rendering error:', e);
+        }
+      }
+    }
+
+    
+    // Direct initialization for non-encrypted document
+    document.addEventListener('DOMContentLoaded', () => {
+      initCodeBlocks();
+      initScrollspy();
+      initMermaid();
+    });
+    
+  </script>
+</body>
+</html>
