@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="transition-colors duration-300">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD 內容清理工具 (自動版)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                            950: '#2e1065',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Inter & Noto Sans TC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Turndown Library -->
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen py-6 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+
+<div class="max-w-6xl mx-auto space-y-6">
+    <!-- 標頭區塊 -->
+    <div class="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="absolute inset-0 bg-gradient-to-r from-indigo-50/30 to-violet-50/30 dark:from-indigo-950/10 dark:to-purple-950/10 opacity-70 pointer-events-none"></div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-purple-400">MD 內容清理工具</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">貼上 MD/HTML 自動轉換與格式清理，支援手機端與專屬網站排除規則</p>
+        </div>
+        <div class="relative z-10 flex items-center gap-3 self-end md:self-auto">
+            <!-- 主題切換按鈕 -->
+            <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors shadow-sm focus:outline-none" title="切換深淺色模式">
+                <svg id="moon-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"></path></svg>
+                <svg id="sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m0 13.5V21M4.512 4.512l1.59 1.59m11.362 11.362l1.59 1.59M1.5 12h2.25m15 0H21M4.512 19.488l1.59-1.59m11.362-11.362l1.59-1.59M12 7.25a4.75 4.75 0 110 9.5 4.75 4.75 0 010-9.5z"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主編輯區網格 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        <!-- 原始內容輸入區 -->
+        <div class="order-1 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center bg-slate-50 dark:bg-slate-800/50 px-4 py-3 border-b border-slate-200 dark:border-slate-800 gap-2">
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    Markdown 原始內容（貼上後自動清理）
+                </h3>
+                <div class="flex items-center gap-1.5 self-start sm:self-auto">
+                    <span class="text-xs text-slate-500 dark:text-slate-400">來源網站:</span>
+                    <input type="text" id="sourceDomain" placeholder="例如: heho.com.tw" class="text-xs px-2.5 py-1.5 border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 w-44 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                </div>
+            </div>
+            <textarea id="inputArea" placeholder="將轉換後的 MD 貼在此處，或手動貼上以進行清理..." class="flex-grow w-full h-[400px] p-4 font-mono text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-0 focus:outline-none focus:ring-0 resize-y min-h-[200px]"></textarea>
+        </div>
+
+        <!-- 中間按鈕控制區 (手機版置於兩區塊之間；桌面版置於頂部並橫跨兩欄) -->
+        <div class="order-2 lg:order-first lg:col-span-2 grid grid-cols-3 gap-2 py-3 px-3 sm:px-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm transition-all">
+            <button onclick="processContent(true)" class="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-2 py-2.5 sm:py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow font-bold text-[10px] sm:text-sm transition duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-6.75h.008v.008H10.5v-.008zm0 2.25h.008v.008H10.5v-.008zm0 2.25h.008v.008H10.5v-.008zM9 10.5h.008v.008H9v-.008zm0 2.25h.008v.008H9v-.008zm0 2.25h.008v.008H9v-.008zm-1.5-4.5h.008v.008H7.5v-.008zm0 2.25h.008v.008H7.5v-.008zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5v-.008z"></path></svg>
+                <span>重新清理</span>
+            </button>
+            <button onclick="copyContent()" class="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-2 py-2.5 sm:py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow font-bold text-[10px] sm:text-sm transition duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H5.25m14.25 9.75a1.125 1.125 0 001.125-1.125V3.75c0-.621-.504-1.125-1.125-1.125h-9.75a1.125 1.125 0 00-1.125 1.125v1.125m14.25 9.75M8.25 19.5h3.375a1.125 1.125 0 011.125 1.125v1.125m-9.75-15h9.75m-9.75 0h.008v.008H3.75V3.75z"></path></svg>
+                <span>一鍵複製</span>
+            </button>
+            <button onclick="downloadFile()" class="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-2 py-2.5 sm:py-3 bg-slate-700 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl shadow font-bold text-[10px] sm:text-sm transition duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-slate-500">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path></svg>
+                <span>另存為 .md</span>
+            </button>
+        </div>
+
+        <!-- 清理後結果區 -->
+        <div class="order-3 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    清理後結果（可手動微調）
+                </h3>
+                <span id="lastCleanTime" class="text-xs font-semibold text-slate-400 dark:text-slate-500">未執行清理</span>
+            </div>
+            <textarea id="outputArea" placeholder="處理後的內容會顯示在這裡，您可在此進行最後的編修調整..." class="flex-grow w-full h-[400px] p-4 font-mono text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-0 focus:outline-none focus:ring-0 resize-y min-h-[200px]"></textarea>
+        </div>
+    </div>
+
+    <!-- 字數統計區塊 -->
+    <div class="grid grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl text-center shadow-sm">
+            <span id="statOrig" class="text-xl md:text-2xl font-black text-indigo-600 dark:text-indigo-400 block">0</span>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">原始字數</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl text-center shadow-sm">
+            <span id="statClean" class="text-xl md:text-2xl font-black text-indigo-600 dark:text-indigo-400 block">0</span>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">清理字數</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl text-center shadow-sm">
+            <span id="statPct" class="text-xl md:text-2xl font-black text-emerald-600 dark:text-emerald-400 block">0%</span>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">減少比例</span>
+        </div>
+    </div>
+
+    <!-- HTML 轉 Markdown 折疊面板 -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+        <button onclick="toggleSection('htmlConvertBody', 'htmlConvertArrow')" class="w-full flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 text-left font-bold text-slate-700 dark:text-slate-200 focus:outline-none">
+            <span class="flex items-center gap-2 text-sm">
+                <svg class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"></path></svg>
+                🔄 進階：HTML 轉 Markdown
+            </span>
+            <span id="htmlConvertArrow" class="transform transition-transform duration-200 text-xs">▶</span>
+        </button>
+        <div id="htmlConvertBody" class="hidden p-4 space-y-3">
+            <textarea id="htmlInput" placeholder="請在此貼上網頁的 HTML 原始碼..." class="w-full h-44 p-3 border rounded-xl font-mono text-sm bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <button onclick="convertHtmlToMd()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-md text-sm transition-all focus:outline-none">🔄 將 HTML 轉換為 Markdown 並自動執行清理</button>
+        </div>
+    </div>
+
+    <!-- 設定功能折疊面板 -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+        <button onclick="toggleSection('settingsBody', 'settingsArrow')" class="w-full flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 text-left font-bold text-slate-700 dark:text-slate-200 focus:outline-none">
+            <span class="flex items-center gap-2 text-sm">
+                <svg class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.645-.869l.214-1.28z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                ⚙️ 轉換與排除規則設定
+            </span>
+            <span id="settingsArrow" class="transform transition-transform duration-200 text-xs">▶</span>
+        </button>
+        <div id="settingsBody" class="hidden p-4 space-y-4">
+            <!-- 分頁按鈕 -->
+            <div class="flex border-b border-slate-200 dark:border-slate-800 mb-4 overflow-x-auto">
+                <button onclick="switchTab('tab-general')" id="btn-tab-general" class="tab-btn px-4 py-2 font-bold text-xs md:text-sm border-b-2 border-indigo-600 text-indigo-600 focus:outline-none whitespace-nowrap">通用排除規則</button>
+                <button onclick="switchTab('tab-sites')" id="btn-tab-sites" class="tab-btn px-4 py-2 font-bold text-xs md:text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none whitespace-nowrap">個別網站設定</button>
+                <button onclick="switchTab('tab-files')" id="btn-tab-files" class="tab-btn px-4 py-2 font-bold text-xs md:text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none whitespace-nowrap">存檔檔名設定</button>
+            </div>
+
+            <!-- 通用設定內容 -->
+            <div id="tab-general" class="tab-content space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">起點標記（處理時會從第一個以此開頭的行開始提取）</label>
+                    <input type="text" id="setting_general_startRule" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">終點標記（遇到任何一個關鍵字即停止提取，一行一條）</label>
+                    <textarea id="setting_general_endRules" class="w-full h-20 p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm font-mono focus:ring-1 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">排除規則（符合任何一條即過濾該行。正則請寫在 // 中，如 `/!\[ad-.*\]/`，一行一條）</label>
+                    <textarea id="setting_general_excludeRules" class="w-full h-32 p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm font-mono focus:ring-1 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="setting_general_reading_enabled" onchange="toggleReadingDetails()" class="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                        <label for="setting_general_reading_enabled" class="text-xs font-bold text-slate-600 dark:text-slate-300">啟用「延伸閱讀」區塊自動過濾</label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-5" id="setting_general_reading_details">
+                        <div>
+                            <label class="block text-xxs font-semibold text-slate-400 dark:text-slate-500 mb-1">延伸閱讀區塊起點正則</label>
+                            <input type="text" id="setting_general_reading_start" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-xs font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xxs font-semibold text-slate-400 dark:text-slate-500 mb-1">延伸閱讀區塊終點關鍵字/正則</label>
+                            <input type="text" id="setting_general_reading_end" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-xs font-mono">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button onclick="restoreDefaultSettings()" class="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850">回復預設</button>
+                    <button onclick="saveGeneralSettings()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 shadow-sm">儲存通用設定</button>
+                </div>
+            </div>
+
+            <!-- 個別網站設定內容 -->
+            <div id="tab-sites" class="tab-content hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h4 class="text-xs font-bold text-slate-600 dark:text-slate-300">已設定網站規則</h4>
+                    <button onclick="openAddSiteModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow flex items-center gap-1 focus:outline-none">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                        新增個別設定
+                    </button>
+                </div>
+
+                <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950 shadow-inner">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                            <thead class="bg-slate-100/80 dark:bg-slate-900/80">
+                                <tr>
+                                    <th class="px-4 py-2.5 text-left text-xxs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">網站網域/識別</th>
+                                    <th class="px-4 py-2.5 text-left text-xxs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">起點</th>
+                                    <th class="px-4 py-2.5 text-left text-xxs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">終點</th>
+                                    <th class="px-4 py-2.5 text-left text-xxs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">排除規則</th>
+                                    <th class="px-4 py-2.5 text-right text-xxs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sitesTableBody" class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                                <!-- 由 JS 渲染 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 新增/編輯網站表單 (隱藏/展開) -->
+                <div id="siteFormModal" class="hidden border border-slate-200 dark:border-slate-800 p-4 rounded-xl bg-slate-50 dark:bg-slate-850 space-y-4 transition-all">
+                    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+                        <h5 id="siteFormTitle" class="text-xs font-bold text-slate-800 dark:text-slate-200">新增網站規則</h5>
+                        <button onclick="closeSiteForm()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm">✕</button>
+                    </div>
+                    <input type="hidden" id="siteFormIndex" value="-1">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">網域識別 (如: heho.com.tw，清理時會比對此標籤)</label>
+                        <input type="text" id="site_domain" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-xs focus:outline-none" placeholder="e.g. heho.com.tw">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="flex items-center text-xs font-bold text-slate-600 dark:text-slate-300 gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="site_override_start" onchange="toggleSiteOverride('start')" class="rounded border-slate-300"> 覆寫起點標記
+                            </label>
+                            <input type="text" id="site_startRule" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-xs focus:outline-none" disabled>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="flex items-center text-xs font-bold text-slate-600 dark:text-slate-300 gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="site_override_reading" onchange="toggleSiteOverride('reading')" class="rounded border-slate-300"> 覆寫延伸閱讀過濾
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="text" id="site_reading_start" class="w-1/2 p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-xxs font-mono focus:outline-none" placeholder="起點正則" disabled>
+                                <input type="text" id="site_reading_end" class="w-1/2 p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-xxs font-mono focus:outline-none" placeholder="終點關鍵字" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="flex items-center text-xs font-bold text-slate-600 dark:text-slate-300 gap-1.5 cursor-pointer mb-1">
+                            <input type="checkbox" id="site_override_end" onchange="toggleSiteOverride('end')" class="rounded border-slate-300"> 覆寫終點標記 (一行一條)
+                        </label>
+                        <textarea id="site_endRules" class="w-full h-16 p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none" disabled></textarea>
+                    </div>
+                    <div>
+                        <label class="flex items-center text-xs font-bold text-slate-600 dark:text-slate-300 gap-1.5 cursor-pointer mb-1">
+                            <input type="checkbox" id="site_override_exclude" onchange="toggleSiteOverride('exclude')" class="rounded border-slate-300"> 覆寫排除過濾規則 (一行一條)
+                        </label>
+                        <textarea id="site_excludeRules" class="w-full h-24 p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none" disabled></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2 border-t border-slate-200 dark:border-slate-800 pt-3">
+                        <button onclick="closeSiteForm()" class="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100">取消</button>
+                        <button onclick="saveSiteRules()" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 shadow-sm">儲存個別設定</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 存檔檔案設定內容 -->
+            <div id="tab-files" class="tab-content hidden space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">自訂存檔檔名 (留空則自動使用文章第一行標題):</label>
+                    <input type="text" id="customFilename" placeholder="例如: 2026-04-29：文章標題" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="chkAddDate" checked class="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                    <label for="chkAddDate" class="text-xs font-semibold text-slate-600 dark:text-slate-300">存檔時自動加入日期前綴 (yyyy-mm-dd)</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 預設轉換與清理設定規則
+    const DEFAULT_SETTINGS = {
+        general: {
+            startRule: "## ",
+            endRules: ["最新文章", "一、本網站內所有資料"],
+            excludeRules: [
+                "/!\\[share-.*\\]/",
+                "瀏覽數：",
+                "/!\\[article-preview\\]/",
+                "photo:",
+                "/^Photo[：:]/",
+                "/!\\[ad-.*\\]/",
+                "/_nuxt\\/img\\/.*\\.gif/",
+                "/^\\d+$/"
+            ],
+            excludeReading: {
+                enabled: true,
+                startPattern: "^###\\s*\\*{0,2}延伸閱讀\\*{0,2}",
+                endPattern: "icon-secretary.png"
+            }
+        },
+        sites: []
+    };
+
+    let settings = {};
+    var turndownService = null;
+
+    // 初始化 Turndown 轉換庫
+    function initTurndown() {
+        if (typeof TurndownService !== 'undefined' && !turndownService) {
+            turndownService = new TurndownService({
+                headingStyle: 'atx',
+                codeBlockStyle: 'fenced'
+            });
+        }
+    }
+
+    // 主題設定 (深色/淺色)
+    function initTheme() {
+        const isDark = localStorage.getItem('theme') === 'dark' || 
+                       (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('sun-icon').classList.remove('hidden');
+            document.getElementById('moon-icon').classList.add('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('sun-icon').classList.add('hidden');
+            document.getElementById('moon-icon').classList.remove('hidden');
+        }
+    }
+
+    function toggleTheme() {
+        if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+            document.getElementById('sun-icon').classList.add('hidden');
+            document.getElementById('moon-icon').classList.remove('hidden');
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+            document.getElementById('sun-icon').classList.remove('hidden');
+            document.getElementById('moon-icon').classList.add('hidden');
+        }
+    }
+
+    // 設定載入與儲存
+    function loadSettings() {
+        const saved = localStorage.getItem('md_cleaner_settings');
+        if (saved) {
+            try {
+                settings = JSON.parse(saved);
+                if (!settings.general) settings.general = DEFAULT_SETTINGS.general;
+                if (!settings.sites) settings.sites = DEFAULT_SETTINGS.sites;
+            } catch (e) {
+                settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+            }
+        } else {
+            settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+        }
+
+        // 確保屬性齊全
+        if (!settings.general.startRule) settings.general.startRule = DEFAULT_SETTINGS.general.startRule;
+        if (!settings.general.endRules) settings.general.endRules = DEFAULT_SETTINGS.general.endRules;
+        if (!settings.general.excludeRules) settings.general.excludeRules = DEFAULT_SETTINGS.general.excludeRules;
+        if (!settings.general.excludeReading) settings.general.excludeReading = DEFAULT_SETTINGS.general.excludeReading;
+
+        // 載入存檔命名設定
+        const savedCustomFn = localStorage.getItem('md_cleaner_custom_fn');
+        const savedAddDate = localStorage.getItem('md_cleaner_add_date');
+        if (savedCustomFn !== null) document.getElementById('customFilename').value = savedCustomFn;
+        if (savedAddDate !== null) document.getElementById('chkAddDate').checked = (savedAddDate === 'true');
+
+        saveSettings();
+    }
+
+    function saveSettings() {
+        localStorage.setItem('md_cleaner_settings', JSON.stringify(settings));
+        localStorage.setItem('md_cleaner_custom_fn', document.getElementById('customFilename').value);
+        localStorage.setItem('md_cleaner_add_date', document.getElementById('chkAddDate').checked);
+    }
+
+    function restoreDefaultSettings() {
+        if (confirm('確定要將通用排除設定回復成預設值嗎？這將不會影響您的個別網站設定。')) {
+            settings.general = JSON.parse(JSON.stringify(DEFAULT_SETTINGS.general));
+            saveSettings();
+            populateSettingsUI();
+            processContent(false);
+        }
+    }
+
+    // 填寫與同步設定 UI 欄位
+    function populateSettingsUI() {
+        document.getElementById('setting_general_startRule').value = settings.general.startRule || "";
+        document.getElementById('setting_general_endRules').value = (settings.general.endRules || []).join('\n');
+        document.getElementById('setting_general_excludeRules').value = (settings.general.excludeRules || []).join('\n');
+        
+        const readingEnabled = settings.general.excludeReading ? settings.general.excludeReading.enabled : true;
+        document.getElementById('setting_general_reading_enabled').checked = readingEnabled;
+        document.getElementById('setting_general_reading_start').value = settings.general.excludeReading ? settings.general.excludeReading.startPattern : "^###\\s*\\*{0,2}延伸閱讀\\*{0,2}";
+        document.getElementById('setting_general_reading_end').value = settings.general.excludeReading ? settings.general.excludeReading.endPattern : "icon-secretary.png";
+        
+        toggleReadingDetails();
+        renderSitesTable();
+    }
+
+    function toggleReadingDetails() {
+        const enabled = document.getElementById('setting_general_reading_enabled').checked;
+        const details = document.getElementById('setting_general_reading_details');
+        const startInput = document.getElementById('setting_general_reading_start');
+        const endInput = document.getElementById('setting_general_reading_end');
+        if (enabled) {
+            details.style.opacity = '1';
+            startInput.removeAttribute('disabled');
+            endInput.removeAttribute('disabled');
+        } else {
+            details.style.opacity = '0.5';
+            startInput.setAttribute('disabled', 'true');
+            endInput.setAttribute('disabled', 'true');
+        }
+    }
+
+    // 儲存通用設定
+    function saveGeneralSettings() {
+        settings.general.startRule = document.getElementById('setting_general_startRule').value;
+        settings.general.endRules = document.getElementById('setting_general_endRules').value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        settings.general.excludeRules = document.getElementById('setting_general_excludeRules').value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        settings.general.excludeReading = {
+            enabled: document.getElementById('setting_general_reading_enabled').checked,
+            startPattern: document.getElementById('setting_general_reading_start').value,
+            endPattern: document.getElementById('setting_general_reading_end').value
+        };
+        
+        saveSettings();
+        alert('通用排除設定儲存成功！');
+        processContent(false);
+    }
+
+    // 網域字串處理
+    function cleanDomain(input) {
+        if (!input) return "";
+        let val = input.trim();
+        if (val.startsWith("http://") || val.startsWith("https://")) {
+            try {
+                return new URL(val).hostname.replace("www.", "");
+            } catch (e) {}
+        }
+        val = val.replace(/^(https?:\/\/)?(www\.)?/, "");
+        val = val.split('/')[0];
+        return val.toLowerCase();
+    }
+
+    // 取得當前網域所對應的清理規則
+    function getRulesForDomain(domain) {
+        const cleanedDomain = cleanDomain(domain);
+        const site = settings.sites.find(s => cleanDomain(s.domain) === cleanedDomain);
+        
+        const rules = {
+            startRule: settings.general.startRule,
+            endRules: [...settings.general.endRules],
+            excludeRules: [...settings.general.excludeRules],
+            excludeReading: { ...settings.general.excludeReading }
+        };
+        
+        if (site) {
+            if (site.overrideStart) rules.startRule = site.startRule;
+            if (site.overrideEnd) rules.endRules = [...site.endRules];
+            if (site.overrideExclude) rules.excludeRules = [...site.excludeRules];
+            if (site.overrideReading) {
+                rules.excludeReading = {
+                    enabled: true,
+                    startPattern: site.readingStart,
+                    endPattern: site.readingEnd
+                };
+            }
+        }
+        
+        return rules;
+    }
+
+    // 規則比對核心
+    function isStartMatch(line, rule) {
+        if (!rule) return true;
+        const trimmed = line.trim();
+        if (rule.startsWith('/') && rule.endsWith('/')) {
+            try {
+                const re = new RegExp(rule.slice(1, -1));
+                return re.test(line);
+            } catch (e) {
+                console.error("起點正則錯誤:", e);
+            }
+        }
+        return trimmed.startsWith(rule.trim());
+    }
+
+    function isEndMatch(line, endRules) {
+        if (!endRules || endRules.length === 0) return false;
+        for (let r of endRules) {
+            if (!r.trim()) continue;
+            if (r.startsWith('/') && r.endsWith('/')) {
+                try {
+                    const re = new RegExp(r.slice(1, -1));
+                    if (re.test(line)) return true;
+                } catch (e) {
+                    console.error("終點正則錯誤:", e);
+                }
+            } else {
+                if (line.includes(r.trim())) return true;
+            }
+        }
+        return false;
+    }
+
+    function isExcluded(line, excludeRules) {
+        if (!excludeRules || excludeRules.length === 0) return false;
+        const trimmed = line.trim();
+        for (let r of excludeRules) {
+            if (!r.trim()) continue;
+            if (r.startsWith('/') && r.endsWith('/')) {
+                try {
+                    const re = new RegExp(r.slice(1, -1));
+                    if (re.test(line)) return true;
+                } catch (e) {
+                    console.error("排除正則錯誤:", e);
+                }
+            } else {
+                if (trimmed.startsWith(r.trim()) || line.includes(r.trim())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // 自動偵測來源網域
+    function detectAndSetDomain(htmlText, mdText) {
+        let domain = "";
+        if (htmlText) {
+            // 解析 canonical 網址
+            const canonicalMatch = htmlText.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i);
+            if (canonicalMatch && canonicalMatch[1]) {
+                domain = cleanDomain(canonicalMatch[1]);
+            }
+            if (!domain) {
+                // 解析 og:url
+                const ogUrlMatch = htmlText.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i);
+                if (ogUrlMatch && ogUrlMatch[1]) {
+                    domain = cleanDomain(ogUrlMatch[1]);
+                }
+            }
+            if (!domain) {
+                // 解析第一個出現的 http 網址
+                const urlMatch = htmlText.match(/https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                if (urlMatch) {
+                    domain = cleanDomain(urlMatch[0]);
+                }
+            }
+        }
+        
+        if (!domain && mdText) {
+            const urlMatch = mdText.match(/https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+            if (urlMatch) {
+                domain = cleanDomain(urlMatch[0]);
+            }
+        }
+        
+        if (domain) {
+            document.getElementById('sourceDomain').value = domain;
+        }
+    }
+
+    // 個別網站設定渲染與處理
+    function renderSitesTable() {
+        const tbody = document.getElementById('sitesTableBody');
+        tbody.innerHTML = '';
+        
+        if (settings.sites.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-4 py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+                        目前尚未建立任何網站個別設定規則。
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        settings.sites.forEach((site, index) => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors';
+            
+            tr.innerHTML = `
+                <td class="px-4 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[130px]">
+                    ${site.domain}
+                </td>
+                <td class="px-4 py-2.5 text-xxs text-slate-500 dark:text-slate-400">
+                    ${site.overrideStart ? `<span class="bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-1 py-0.5 rounded text-[10px] font-semibold mr-1">覆寫:</span><code class="font-mono bg-slate-100 dark:bg-slate-950 px-1 rounded">${site.startRule}</code>` : '<span class="text-slate-400">繼承通用</span>'}
+                </td>
+                <td class="px-4 py-2.5 text-xxs text-slate-500 dark:text-slate-400">
+                    ${site.overrideEnd ? `<span class="bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-1 py-0.5 rounded text-[10px] font-semibold mr-1">覆寫:</span>${site.endRules.length} 條` : '<span class="text-slate-400">繼承通用</span>'}
+                </td>
+                <td class="px-4 py-2.5 text-xxs text-slate-500 dark:text-slate-400">
+                    ${site.overrideExclude ? `<span class="bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-1 py-0.5 rounded text-[10px] font-semibold mr-1">覆寫:</span>${site.excludeRules.length} 條` : '<span class="text-slate-400">繼承通用</span>'}
+                </td>
+                <td class="px-4 py-2.5 text-xs font-semibold text-right space-x-2.5 whitespace-nowrap">
+                    <button onclick="editSiteRules(${index})" class="text-indigo-600 dark:text-indigo-400 hover:underline focus:outline-none">編輯</button>
+                    <button onclick="deleteSiteRules(${index})" class="text-rose-600 dark:text-rose-400 hover:underline focus:outline-none">刪除</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openAddSiteModal() {
+        document.getElementById('siteFormModal').classList.remove('hidden');
+        document.getElementById('siteFormTitle').innerText = "新增個別網站排除設定";
+        document.getElementById('siteFormIndex').value = "-1";
+        
+        document.getElementById('site_domain').value = "";
+        
+        document.getElementById('site_override_start').checked = false;
+        document.getElementById('site_startRule').value = "## ";
+        document.getElementById('site_startRule').setAttribute('disabled', 'true');
+        
+        document.getElementById('site_override_end').checked = false;
+        document.getElementById('site_endRules').value = "";
+        document.getElementById('site_endRules').setAttribute('disabled', 'true');
+        
+        document.getElementById('site_override_exclude').checked = false;
+        document.getElementById('site_excludeRules').value = "";
+        document.getElementById('site_excludeRules').setAttribute('disabled', 'true');
+        
+        document.getElementById('site_override_reading').checked = false;
+        document.getElementById('site_reading_start').value = "";
+        document.getElementById('site_reading_end').value = "";
+        document.getElementById('site_reading_start').setAttribute('disabled', 'true');
+        document.getElementById('site_reading_end').setAttribute('disabled', 'true');
+    }
+
+    function editSiteRules(index) {
+        const site = settings.sites[index];
+        if (!site) return;
+        
+        document.getElementById('siteFormModal').classList.remove('hidden');
+        document.getElementById('siteFormTitle').innerText = `編輯網站排除設定: ${site.domain}`;
+        document.getElementById('siteFormIndex').value = index;
+        
+        document.getElementById('site_domain').value = site.domain;
+        
+        document.getElementById('site_override_start').checked = site.overrideStart || false;
+        document.getElementById('site_startRule').value = site.startRule || "## ";
+        if (site.overrideStart) document.getElementById('site_startRule').removeAttribute('disabled');
+        else document.getElementById('site_startRule').setAttribute('disabled', 'true');
+        
+        document.getElementById('site_override_end').checked = site.overrideEnd || false;
+        document.getElementById('site_endRules').value = (site.endRules || []).join('\n');
+        if (site.overrideEnd) document.getElementById('site_endRules').removeAttribute('disabled');
+        else document.getElementById('site_endRules').setAttribute('disabled', 'true');
+        
+        document.getElementById('site_override_exclude').checked = site.overrideExclude || false;
+        document.getElementById('site_excludeRules').value = (site.excludeRules || []).join('\n');
+        if (site.overrideExclude) document.getElementById('site_excludeRules').removeAttribute('disabled');
+        else document.getElementById('site_excludeRules').setAttribute('disabled', 'true');
+        
+        document.getElementById('site_override_reading').checked = site.overrideReading || false;
+        document.getElementById('site_reading_start').value = site.readingStart || "";
+        document.getElementById('site_reading_end').value = site.readingEnd || "";
+        if (site.overrideReading) {
+            document.getElementById('site_reading_start').removeAttribute('disabled');
+            document.getElementById('site_reading_end').removeAttribute('disabled');
+        } else {
+            document.getElementById('site_reading_start').setAttribute('disabled', 'true');
+            document.getElementById('site_reading_end').setAttribute('disabled', 'true');
+        }
+    }
+
+    function closeSiteForm() {
+        document.getElementById('siteFormModal').classList.add('hidden');
+    }
+
+    function toggleSiteOverride(type) {
+        const isChecked = document.getElementById(`site_override_${type}`).checked;
+        if (type === 'reading') {
+            const startInput = document.getElementById('site_reading_start');
+            const endInput = document.getElementById('site_reading_end');
+            if (isChecked) {
+                startInput.removeAttribute('disabled');
+                endInput.removeAttribute('disabled');
+            } else {
+                startInput.setAttribute('disabled', 'true');
+                endInput.setAttribute('disabled', 'true');
+            }
+        } else {
+            const input = document.getElementById(`site_${type}Rule` + (type === 'end' || type === 'exclude' ? 's' : ''));
+            if (isChecked) input.removeAttribute('disabled');
+            else input.setAttribute('disabled', 'true');
+        }
+    }
+
+    function deleteSiteRules(index) {
+        const domain = settings.sites[index].domain;
+        if (confirm(`確定要刪除網站 ${domain} 的個別排除設定嗎？`)) {
+            settings.sites.splice(index, 1);
+            saveSettings();
+            renderSitesTable();
+            processContent(false);
+        }
+    }
+
+    function saveSiteRules() {
+        const domainInput = document.getElementById('site_domain').value.trim();
+        if (!domainInput) {
+            alert('請輸入網站網域！');
+            return;
+        }
+        
+        const index = parseInt(document.getElementById('siteFormIndex').value);
+        const siteObj = {
+            domain: cleanDomain(domainInput),
+            overrideStart: document.getElementById('site_override_start').checked,
+            startRule: document.getElementById('site_startRule').value,
+            overrideEnd: document.getElementById('site_override_end').checked,
+            endRules: document.getElementById('site_endRules').value.split('\n').map(l => l.trim()).filter(l => l.length > 0),
+            overrideExclude: document.getElementById('site_override_exclude').checked,
+            excludeRules: document.getElementById('site_excludeRules').value.split('\n').map(l => l.trim()).filter(l => l.length > 0),
+            overrideReading: document.getElementById('site_override_reading').checked,
+            readingStart: document.getElementById('site_reading_start').value,
+            readingEnd: document.getElementById('site_reading_end').value
+        };
+        
+        if (index === -1) {
+            // 新增
+            const exists = settings.sites.some(s => s.domain === siteObj.domain);
+            if (exists) {
+                alert(`已存在網域 ${siteObj.domain} 的專屬排除設定！`);
+                return;
+            }
+            settings.sites.push(siteObj);
+        } else {
+            // 編輯
+            settings.sites[index] = siteObj;
+        }
+        
+        saveSettings();
+        closeSiteForm();
+        renderSitesTable();
+        alert('個別網站排除設定已成功儲存！');
+        processContent(false);
+    }
+
+    // 更新字數統計
+    function updateStats() {
+        var orig = document.getElementById('inputArea').value.length;
+        var clean = document.getElementById('outputArea').value.length;
+        var pct = orig === 0 ? 0 : Math.round((1 - clean / orig) * 100);
+        
+        document.getElementById('statOrig').innerText = orig.toLocaleString();
+        document.getElementById('statClean').innerText = clean.toLocaleString();
+        document.getElementById('statPct').innerText = pct + '%';
+    }
+
+    // HTML 轉 MD
+    function convertHtmlToMd() {
+        initTurndown();
+        if (!turndownService) {
+            alert('HTML 轉換庫載入中，請稍候再試...');
+            return;
+        }
+
+        var html = document.getElementById('htmlInput').value;
+        if (!html) {
+            alert('請先貼上網頁 HTML 原始碼！');
+            return;
+        }
+
+        try {
+            // 自動偵測網域
+            detectAndSetDomain(html, null);
+            
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(html, 'text/html');
+            var markdown = turndownService.turndown(doc.body);
+            
+            document.getElementById('inputArea').value = markdown;
+            updateStats();
+            
+            // 自動清理
+            processContent(false);
+            
+            const currentDomain = document.getElementById('sourceDomain').value;
+            alert('轉換成功！已自動套用『' + (currentDomain || '通用') + '』規則完成清理。');
+        } catch (e) {
+            alert('轉換失敗：' + e.message);
+        }
+    }
+
+    // 清理處理 (自動/手動觸發)
+    function processContent(showAlert) {
+        var input = document.getElementById('inputArea').value;
+        if (!input.trim()) {
+            if (showAlert) {
+                alert('請先貼上內容或進行 HTML 轉換！');
+            }
+            return;
+        }
+
+        // 獲取目前套用的排除規則
+        const domain = document.getElementById('sourceDomain').value;
+        const rules = getRulesForDomain(domain);
+
+        var lines = input.split('\n');
+        var startIndex = -1;
+
+        // 尋找起點
+        for (var i = 0; i < lines.length; i++) {
+            if (isStartMatch(lines[i], rules.startRule)) {
+                startIndex = i;
+                break;
+            }
+        }
+
+        if (startIndex === -1) {
+            if (showAlert) {
+                alert('找不到起點標記 (' + rules.startRule + ')，請檢查原始內容或調整排除規則！');
+            }
+            return;
+        }
+
+        // 尋找終點
+        var endIndex = lines.length;
+        for (var j = startIndex; j < lines.length; j++) {
+            if (isEndMatch(lines[j], rules.endRules)) {
+                endIndex = j;
+                break;
+            }
+        }
+
+        var contentLines = lines.slice(startIndex, endIndex);
+        var result = [];
+        var isRelatedReading = false;
+
+        for (var k = 0; k < contentLines.length; k++) {
+            var line = contentLines[k];
+            var trimmedLine = line.trim();
+            
+            // 處理「延伸閱讀」區塊過濾
+            if (rules.excludeReading && rules.excludeReading.enabled) {
+                let startMatch = false;
+                try {
+                    const re = new RegExp(rules.excludeReading.startPattern);
+                    startMatch = re.test(trimmedLine);
+                } catch (e) {
+                    startMatch = trimmedLine.includes(rules.excludeReading.startPattern);
+                }
+                
+                if (startMatch) {
+                    isRelatedReading = true;
+                    continue;
+                }
+                
+                if (isRelatedReading) {
+                    let endMatch = false;
+                    if (rules.excludeReading.endPattern.startsWith('/') && rules.excludeReading.endPattern.endsWith('/')) {
+                        try {
+                            const re = new RegExp(rules.excludeReading.endPattern.slice(1, -1));
+                            endMatch = re.test(line);
+                        } catch (e) {}
+                    } else {
+                        endMatch = line.includes(rules.excludeReading.endPattern);
+                    }
+                    
+                    if (endMatch) {
+                        isRelatedReading = false;
+                        // 特殊相容性邏輯：如果是預設的健康小秘書，保留文字
+                        if (rules.excludeReading.endPattern === 'icon-secretary.png') {
+                            result.push('');
+                            result.push('');
+                            result.push('健康小秘書');
+                            result.push('');
+                        }
+                        continue;
+                    }
+                    continue;
+                }
+            }
+
+            // 行過濾排除
+            if (isExcluded(line, rules.excludeRules)) {
+                continue;
+            }
+
+            result.push(line);
+        }
+
+        var output = result.join('\n').trim();
+        output = output.replace(/\n{3,}/g, '\n\n');
+        document.getElementById('outputArea').value = output;
+        
+        // 更新清理完成時間
+        const d = new Date();
+        const timeStr = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2);
+        document.getElementById('lastCleanTime').innerText = '清理完成於 ' + timeStr;
+
+        updateStats();
+    }
+
+    // 一鍵複製
+    function copyContent() {
+        var output = document.getElementById('outputArea');
+        if (!output.value) { alert('沒有可複製的內容！'); return; }
+        var textArea = document.createElement("textarea");
+        textArea.value = output.value;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            alert('已成功複製到剪貼簿！');
+        } catch (err) {
+            alert('複製失敗，請手動全選複製。');
+        }
+        document.body.removeChild(textArea);
+    }
+
+    // 另存為 .md 檔
+    function downloadFile() {
+        var output = document.getElementById('outputArea').value;
+        if (!output) { alert('沒有可下載的內容！'); return; }
+
+        var firstLine = output.split('\n')[0].replace('## ', '').trim();
+        var customFn = document.getElementById('customFilename').value.trim();
+        var addDate = document.getElementById('chkAddDate').checked;
+        
+        var filename = customFn || firstLine;
+        if (addDate && !customFn) {
+            var d = new Date();
+            var dateStr = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+            filename = dateStr + '：' + filename;
+        }
+        
+        if (!filename.endsWith('.md')) {
+            filename += '.md';
+        }
+
+        var blob = new Blob([output], { type: 'text/markdown;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // 折疊面板開關
+    function toggleSection(bodyId, arrowId) {
+        const body = document.getElementById(bodyId);
+        const arrow = document.getElementById(arrowId);
+        body.classList.toggle('hidden');
+        if (body.classList.contains('hidden')) {
+            arrow.style.transform = 'rotate(0deg)';
+        } else {
+            arrow.style.transform = 'rotate(90deg)';
+        }
+    }
+
+    // 設定面板分頁切換
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(tabId).classList.remove('hidden');
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('border-indigo-600', 'text-indigo-600');
+            btn.classList.add('border-transparent', 'text-slate-500');
+        });
+        const activeBtn = document.getElementById('btn-' + tabId);
+        activeBtn.classList.add('border-indigo-600', 'text-indigo-600');
+        activeBtn.classList.remove('border-transparent', 'text-slate-500');
+    }
+
+    // 事件監聽綁定
+    document.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        loadSettings();
+        populateSettingsUI();
+        initTurndown();
+
+        // 原始內容輸入變化自動執行清理 (帶 300ms 防抖)
+        const inputArea = document.getElementById('inputArea');
+        inputArea.addEventListener('input', function() {
+            clearTimeout(this.timer);
+            this.timer = setTimeout(() => {
+                if (this.value.trim().length > 0) {
+                    if (!document.getElementById('sourceDomain').value.trim()) {
+                        detectAndSetDomain(null, this.value);
+                    }
+                    processContent(false);
+                }
+            }, 300);
+        });
+
+        // 來源網站輸入變化自動重新清理
+        const sourceDomainInput = document.getElementById('sourceDomain');
+        sourceDomainInput.addEventListener('input', function() {
+            clearTimeout(this.timer);
+            this.timer = setTimeout(() => {
+                processContent(false);
+            }, 300);
+        });
+
+        // 存檔與命名設定監聽
+        document.getElementById('customFilename').addEventListener('input', saveSettings);
+        document.getElementById('chkAddDate').addEventListener('change', saveSettings);
+    });
+</script>
+
+</body>
+</html>
